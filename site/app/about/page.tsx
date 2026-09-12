@@ -1,5 +1,6 @@
 import { pageMeta } from "@/lib/site";
-import { Button, Container, Display, H2, Section, SectionLabel } from "@/components/ui";
+import { Button, Container, Display, Divider, H2, Section, SectionLabel } from "@/components/ui";
+import { SiteImage } from "@/components/SiteImage";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata = pageMeta({
@@ -48,6 +49,27 @@ export default function AboutPage() {
           </div>
         </Container>
       </Section>
+
+      <Container>
+        <Divider />
+      </Container>
+
+      <Section>
+        <Container className="grid grid-cols-4 gap-8 py-16 md:grid-cols-12 md:gap-8 md:py-24">
+          <Reveal className="col-span-4 md:col-span-12 lg:col-span-5">
+            <SectionLabel index="Studio" title="Where it is built" />
+            <H2 className="mt-4">A small team, a review culture.</H2>
+            <p className="mt-6 max-w-[44ch] leading-relaxed text-muted">
+              Every claim on this site maps to something checkable: a test, a receipt, or a documented limit.
+              That habit starts in the room where the work happens.
+            </p>
+          </Reveal>
+          <Reveal delay={0.05} className="col-span-4 md:col-span-12 lg:col-span-6 lg:col-start-7">
+            <SiteImage slot="about-workspace" fig="FIG. 01" />
+          </Reveal>
+        </Container>
+      </Section>
+
       <Section dark>
         <Container className="py-16 md:py-24">
           <Reveal>

@@ -1,6 +1,7 @@
 import { pageMeta } from "@/lib/site";
-import { Button, Container, Display, H2, Section, SectionLabel, StatusBadge } from "@/components/ui";
+import { Button, Container, Display, Divider, H2, Section, SectionLabel, StatusBadge } from "@/components/ui";
 import { ArchitectureFlow, PolicyTable } from "@/components/diagrams";
+import { SiteImage } from "@/components/SiteImage";
 import { CodeBlock } from "@/components/CodeBlock";
 import { Reveal } from "@/components/Reveal";
 
@@ -115,6 +116,21 @@ export default function AgentsPage() {
           </div>
         </Container>
       </Section>
+
+      <Section>
+        <Container className="py-16 md:py-24">
+          <Reveal>
+            <SectionLabel index="In operation" title="Interception, as operators see it" />
+          </Reveal>
+          <Reveal className="mt-8">
+            <SiteImage slot="agents-console" fig="FIG. 01" />
+          </Reveal>
+        </Container>
+      </Section>
+
+      <Container>
+        <Divider />
+      </Container>
 
       <Section>
         <Container id="mcp" className="scroll-mt-24 py-16 md:py-24">

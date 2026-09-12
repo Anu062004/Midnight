@@ -1,6 +1,7 @@
 import { pageMeta } from "@/lib/site";
 import { Button, Container, Display, Divider, FeatureRow, H2, Section, SectionLabel } from "@/components/ui";
 import { ArchitectureFlow } from "@/components/diagrams";
+import { SiteImage } from "@/components/SiteImage";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata = pageMeta({
@@ -70,6 +71,22 @@ export default function ProductPage() {
           </Reveal>
         </Container>
       </Section>
+
+      <Section>
+        <Container className="py-16 md:py-24">
+          <Reveal>
+            <SectionLabel index="Console" title="Operations view" />
+            <H2 className="mt-4">See every enforcement.</H2>
+          </Reveal>
+          <Reveal className="mt-10">
+            <SiteImage slot="product-console" fig="FIG. 01" />
+          </Reveal>
+        </Container>
+      </Section>
+
+      <Container>
+        <Divider />
+      </Container>
 
       <Section>
         <Container className="py-16 md:py-24">

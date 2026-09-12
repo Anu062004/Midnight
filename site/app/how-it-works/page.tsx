@@ -1,5 +1,6 @@
 import { pageMeta } from "@/lib/site";
-import { Button, Container, Display, H2, Section, SectionLabel } from "@/components/ui";
+import { Button, Container, Display, Divider, H2, Section, SectionLabel } from "@/components/ui";
+import { SiteImage } from "@/components/SiteImage";
 import { HeroDemo } from "@/components/HeroDemo";
 import { Reveal } from "@/components/Reveal";
 
@@ -61,6 +62,21 @@ export default function HowItWorksPage() {
               </li>
             ))}
           </ol>
+        </Container>
+      </Section>
+
+      <Container>
+        <Divider />
+      </Container>
+
+      <Section>
+        <Container className="py-16 md:py-24">
+          <Reveal>
+            <SectionLabel index="Field capture" title="The steps on one request" />
+          </Reveal>
+          <Reveal className="mt-8">
+            <SiteImage slot="how-workflow" fig="FIG. 01" />
+          </Reveal>
         </Container>
       </Section>
 

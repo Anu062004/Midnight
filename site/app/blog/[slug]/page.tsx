@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { pageMeta } from "@/lib/site";
 import { Container, Section } from "@/components/ui";
+import { SiteImage } from "@/components/SiteImage";
 import { posts } from "@/data/blog";
 
 export async function generateStaticParams() {
@@ -33,6 +34,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             {post.title}
           </h1>
           <p className="mt-5 border-l-2 border-accent pl-4 text-lg leading-relaxed text-muted">{post.dek}</p>
+          <div className="mt-10">
+            <SiteImage slot={`blog-${slug}`} fig="FIG. 01" />
+          </div>
           <div className="mt-10 space-y-6 border-t border-line pt-8">
             {post.body.map((para, i) => (
               <p key={i} className="max-w-[68ch] text-[17px] leading-[1.75] text-ink/85">

@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { pageMeta, siteConfig } from "@/lib/site";
 import { Button, Container, Display, Divider, FeatureRow, H2, Section, SectionLabel, Stat, StatusBadge, TextLink } from "@/components/ui";
 import { ArchitectureFlow, ReceiptCard } from "@/components/diagrams";
+import { SiteImage } from "@/components/SiteImage";
 import { CodeBlock } from "@/components/CodeBlock";
 import { HeroDemo } from "@/components/HeroDemo";
 import { Reveal } from "@/components/Reveal";
@@ -377,6 +378,23 @@ const response = await secureAI.chat({
           </div>
         </Container>
       </Section>
+
+      {/* FILM */}
+      <Section>
+        <Container className="py-16 md:py-24">
+          <Reveal>
+            <SectionLabel index="Film" title="Live workflow / 00:24" />
+          </Reveal>
+          <Reveal className="mt-8">
+            <SiteImage slot="home-film" fig="FIG. 01" />
+          </Reveal>
+          <p className="mt-4 text-sm text-muted">The interactive demo runs above; the recorded walkthrough drops in here.</p>
+        </Container>
+      </Section>
+
+      <Container>
+        <Divider />
+      </Container>
 
       {/* FINAL CTA */}
       <Section dark>

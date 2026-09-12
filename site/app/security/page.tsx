@@ -1,5 +1,6 @@
 import { pageMeta } from "@/lib/site";
 import { Button, Container, Display, H2, Section, SectionLabel } from "@/components/ui";
+import { SiteImage } from "@/components/SiteImage";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata = pageMeta({
@@ -65,6 +66,12 @@ export default function SecurityPage() {
               </div>
             ))}
           </dl>
+          <Reveal className="mt-12">
+            <SectionLabel index="Deployment" title="Where each part runs" />
+          </Reveal>
+          <Reveal className="mt-8">
+            <SiteImage slot="security-infra" fig="FIG. 01" />
+          </Reveal>
         </Container>
       </Section>
 

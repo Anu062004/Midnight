@@ -1,6 +1,7 @@
 import { pageMeta } from "@/lib/site";
-import { Button, Container, Display, H2, Section, SectionLabel } from "@/components/ui";
+import { Button, Container, Display, Divider, H2, Section, SectionLabel } from "@/components/ui";
 import { PolicyTable } from "@/components/diagrams";
+import { SiteImage } from "@/components/SiteImage";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata = pageMeta({
@@ -57,6 +58,22 @@ export default function EnterprisePage() {
               />
             </Reveal>
           </div>
+        </Container>
+      </Section>
+
+      <Container>
+        <Divider />
+      </Container>
+
+      <Section>
+        <Container className="py-16 md:py-24">
+          <Reveal>
+            <SectionLabel index="Audit view" title="Oversight without content" />
+            <H2 className="mt-4">Review enforcement, not prompts.</H2>
+          </Reveal>
+          <Reveal className="mt-10">
+            <SiteImage slot="enterprise-audit" fig="FIG. 01" />
+          </Reveal>
         </Container>
       </Section>
 

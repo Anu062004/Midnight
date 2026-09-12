@@ -1,6 +1,7 @@
 import { pageMeta } from "@/lib/site";
 import { Button, Container, Display, H2, Section, SectionLabel } from "@/components/ui";
 import { ArchitectureFlow, ReceiptCard } from "@/components/diagrams";
+import { SiteImage } from "@/components/SiteImage";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata = pageMeta({
@@ -134,6 +135,14 @@ export default function MidnightPage() {
               />
             </div>
           </Reveal>
+          <div className="mt-12">
+            <Reveal>
+              <SectionLabel index="Record" title="The verifiable record" />
+            </Reveal>
+            <Reveal className="mt-8">
+              <SiteImage slot="midnight-record" fig="FIG. 01" />
+            </Reveal>
+          </div>
           <div className="mt-12">
             <Button href="/security" variant="primary">Read the security model</Button>
           </div>
