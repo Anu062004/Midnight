@@ -63,15 +63,13 @@ export function H2({ children, className }: { children: ReactNode; className?: s
 type ButtonProps = {
   children: ReactNode;
   href?: string;
-  /** Render a plain anchor (new tab) for URLs outside the site, e.g. the local app. */
-  external?: boolean;
   variant?: "primary" | "secondary" | "dark" | "accent";
   className?: string;
   onClick?: () => void;
   type?: "button" | "submit";
 };
 
-export function Button({ children, href, external = false, variant = "primary", className, onClick, type = "button" }: ButtonProps) {
+export function Button({ children, href, variant = "primary", className, onClick, type = "button" }: ButtonProps) {
   const styles = cn(
     "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-md border px-6 text-[15px] font-medium transition-colors duration-200",
     variant === "primary" && "border-ink bg-ink text-paper hover:bg-soot",
@@ -81,13 +79,6 @@ export function Button({ children, href, external = false, variant = "primary", 
     className
   );
   if (href) {
-    if (external) {
-      return (
-        <a href={href} target="_blank" rel="noreferrer" className={styles}>
-          {children}
-        </a>
-      );
-    }
     return (
       <Link href={href} className={styles}>
         {children}

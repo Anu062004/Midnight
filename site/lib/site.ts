@@ -8,8 +8,8 @@ export const siteConfig = {
   description:
     "Protect sensitive company data before it reaches AI models and agents. Enforce privacy policies locally and generate verifiable protection receipts.",
   year: 2026,
-  /** Local workspace application. Run `npm start` in the repo root, then open this URL. */
-  appUrl: "http://127.0.0.1:3000",
+  /** Local workspace application. Baked at build time from NEXT_PUBLIC_APP_URL; defaults to the repo server. */
+  appUrl: process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://127.0.0.1:3000",
 } as const;
 
 export function pageMeta({

@@ -21,6 +21,15 @@ Framer Motion note: `framer-motion` must stay version-locked with its `motion-do
 
 `/`, `/product`, `/how-it-works`, `/agents`, `/enterprise`, `/midnight`, `/security`, `/developers`, `/docs`, `/pricing`, `/about`, `/contact`, `/blog`, `/blog/[slug]` (5 essays), `/legal/privacy`, `/legal/terms`, 404. Plus `/sitemap.xml`, `/robots.txt`, `/icon.svg`, `/favicon.ico` (hand-built, matches the SVG mark).
 
+## Wiring to the workspace app
+
+Every “Launch App” button (`components/LaunchApp.tsx`) points at `siteConfig.appUrl`
+(`NEXT_PUBLIC_APP_URL`, default `http://127.0.0.1:3000`) and probes it first with a
+`no-cors` request — no workspace server changes needed, since any HTTP response
+counts as reachable. Online opens the app in a new tab; offline reveals the
+`npm start` command instead of a dead tab. Results cache for 10s. The workspace
+links back via a “Product docs ↗” footer link to the site’s `/docs`.
+
 ## QA
 
 Real-Chrome Playwright checks (see task history): all routes 200 with zero console errors, custom 404, no horizontal overflow at 375/768/1024/1440, every homepage link resolves, contact validation + success path, mobile nav. The 12-column page grids collapse to a 4-column base grid on mobile — a fixed-gutter 12-col grid overflows small viewports by construction, which is why the responsive column classes exist; do not “simplify” them back.

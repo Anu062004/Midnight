@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { navProduct, navSolutions, siteConfig } from "@/lib/site";
+import { LaunchAppButton } from "./LaunchApp";
 import { cn } from "@/lib/cn";
 
 function Dropdown({ label, items, onNavigate }: { label: string; items: readonly { label: string; href: string }[]; onNavigate: () => void }) {
@@ -106,15 +107,7 @@ export function Navbar() {
           <Link href="/docs" className="px-2 py-2 text-sm font-medium text-ink/80 hover:text-ink">
             Docs
           </Link>
-          <a
-            href={siteConfig.appUrl}
-            target="_blank"
-            rel="noreferrer"
-            title="Open the local workspace app (run npm start in the repo root first)"
-            className="inline-flex min-h-[40px] items-center gap-1 rounded-md border border-line px-4 text-sm font-medium transition-colors hover:border-ink"
-          >
-            Launch App <ArrowUpRight size={14} aria-hidden />
-          </a>
+          <LaunchAppButton tone="outline" />
           <Link
             href="/contact"
             className="inline-flex min-h-[40px] items-center rounded-md bg-ink px-4 text-sm font-medium text-paper transition-colors hover:bg-soot"
@@ -158,14 +151,7 @@ export function Navbar() {
             >
               Get Started
             </Link>
-            <a
-              href={siteConfig.appUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 flex min-h-[48px] items-center justify-center gap-1.5 rounded-md border border-line font-medium"
-            >
-              Launch App <ArrowUpRight size={16} aria-hidden />
-            </a>
+            <LaunchAppButton tone="outline" className="mt-3 w-full justify-center [&_a]:min-h-[48px] [&_button]:min-h-[48px] [&_a]:w-full [&_button]:w-full [&_a]:justify-center [&_button]:justify-center" />
           </div>
         </nav>
       )}

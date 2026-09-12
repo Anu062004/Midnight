@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { pageMeta, siteConfig } from "@/lib/site";
+import { ArrowRight } from "lucide-react";
+import { pageMeta } from "@/lib/site";
 import { Button, Container, Display, Divider, FeatureRow, H2, Section, SectionLabel, Stat, StatusBadge, TextLink } from "@/components/ui";
 import { ArchitectureFlow, ReceiptCard } from "@/components/diagrams";
 import { SiteImage } from "@/components/SiteImage";
 import { CodeBlock } from "@/components/CodeBlock";
 import { HeroDemo } from "@/components/HeroDemo";
+import { LaunchAppButton } from "@/components/LaunchApp";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata = pageMeta({
@@ -54,15 +55,7 @@ export default function HomePage() {
               </div>
               <p className="mt-6 text-sm text-muted">Works with AI models, agents and MCP workflows.</p>
               <p className="mt-2 text-sm">
-                <a
-                  href={siteConfig.appUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Open the local workspace app (run npm start in the repo root first)"
-                  className="inline-flex items-center gap-1 font-medium underline decoration-line underline-offset-4 hover:decoration-ink"
-                >
-                  Launch the application <ArrowUpRight size={14} aria-hidden />
-                </a>
+                <LaunchAppButton tone="link" />
               </p>
             </div>
             <div className="col-span-4 md:col-span-12 lg:col-span-7">
@@ -415,9 +408,7 @@ const response = await secureAI.chat({
               <Button href="/contact" variant="dark" className="w-full sm:w-auto">
                 Request Demo
               </Button>
-              <Button href={siteConfig.appUrl} external variant="dark" className="w-full sm:w-auto">
-                Launch App <ArrowUpRight size={16} aria-hidden />
-              </Button>
+              <LaunchAppButton tone="dark" className="w-full sm:w-auto" />
             </div>
           </Reveal>
         </Container>

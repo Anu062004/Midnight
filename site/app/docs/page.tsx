@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-import { pageMeta, siteConfig } from "@/lib/site";
-import { Button, Container, Display, Section } from "@/components/ui";
+import { pageMeta } from "@/lib/site";
+import { Container, Display, Section } from "@/components/ui";
+import { LaunchAppButton } from "@/components/LaunchApp";
 import { docGroups } from "@/data/docs";
 
 export const metadata = pageMeta({
@@ -28,9 +28,7 @@ export default function DocsPage() {
               the documented workflow with synthetic content.
             </p>
           </div>
-          <Button href={siteConfig.appUrl} external variant="primary" className="shrink-0">
-            Launch App <ArrowUpRight size={16} aria-hidden />
-          </Button>
+          <LaunchAppButton tone="primary" className="shrink-0" />
         </div>
         <div className="mt-12 grid gap-10 lg:grid-cols-12">
           <nav aria-label="Documentation sections" className="lg:col-span-3">
