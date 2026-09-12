@@ -1,0 +1,35 @@
+/* Hallmark · macrostructure: Workbench · theme: Cobalt · tone: technical · anchor hue: 256 */
+:root {
+  --color-paper: oklch(98.5% 0.004 250);
+  --color-surface: oklch(100% 0 0);
+  --color-subtle: oklch(96.5% 0.007 250);
+  --color-rule: oklch(89% 0.012 250);
+  --color-ink: oklch(24% 0.02 258);
+  --color-body: oklch(36% 0.018 257);
+  --color-muted: oklch(49% 0.02 257);
+  --color-accent: oklch(49% 0.2 256);
+  --color-accent-soft: oklch(94.5% 0.022 256);
+  --color-accent-ink: oklch(99% 0.003 250);
+  --color-focus: oklch(40% 0.15 256);
+  --color-success: oklch(39% 0.085 160);
+  --color-success-soft: oklch(96% 0.02 160);
+  --color-error: oklch(43% 0.16 25);
+  --color-error-soft: oklch(96% 0.016 25);
+  --font-display: 'Space Grotesk', 'Avenir Next', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'SFMono-Regular', Menlo, monospace;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-display: clamp(1.75rem, 2.6vw, 2.625rem);
+  --radius-sm: 6px;
+  --radius-lg: 10px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-micro: 120ms;
+}

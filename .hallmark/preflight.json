@@ -1,0 +1,10 @@
+{
+  "date": "2026-09-12",
+  "existingCode": false,
+  "source": "PRIVATE_AI_PRODUCT_REFERENCE.md",
+  "framework": "native browser ES modules and Node.js HTTP",
+  "genre": "modern-minimal",
+  "motion": "none",
+  "fonts": ["Space Grotesk", "Inter"],
+  "theme": "Cobalt"
+}

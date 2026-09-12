@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f5f5f2;
+  --color-ink: #111111;
+  --color-muted: #686868;
+  --color-line: #d9d9d4;
+  --color-coal: #111111;
+  --color-soot: #161616;
+  --color-bone: #f5f5f2;
+  --color-accent: #b9f227;
+  --color-accent-ink: #111111;
+
+  --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-display: var(--font-grotesk), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+.dark-zone :focus-visible {
+  outline-color: var(--color-accent);
+}
+
+/* Small-caps metadata line used across the system: 01 / PRIVACY LAYER */
+.meta-label {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A local workspace for reviewing and redacting text before using AI.">
+  <title>Private AI — Workspace</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/src/styles.css">
+  <script type="module" src="/src/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to workspace</a>
+  <aside class="sidebar">
+    <a class="brand" href="#workspace"><span class="brand-mark" aria-hidden="true">p/</span>private ai<span class="alpha">local</span></a>
+    <div class="workspace-label"><span class="workspace-monogram">P</span><span>Personal workspace<small>On this device</small></span></div>
+    <nav aria-label="Main navigation">
+      <a href="#workspace" data-view="workspace" aria-current="page"><span aria-hidden="true">▤</span> Workspace</a>
+      <a href="#policies" data-view="policies"><span aria-hidden="true">☷</span> Local policy</a>
+      <a href="#activity" data-view="activity"><span aria-hidden="true">◷</span> Activity <span id="activity-count" class="nav-count">0</span></a>
+      <a href="#integrations" data-view="integrations"><span aria-hidden="true">⇄</span> Connections</a>
+      <a href="#team" data-view="team"><span aria-hidden="true">♧</span> Team &amp; account</a>
+    </nav>
+    <div class="sidebar-bottom"><div class="local-indicator"><span class="dot"></span> Local processing</div><p>Your text and replacement map stay in this browser tab.</p><button class="text-button" id="clear-session">Clear session <span aria-hidden="true">↗</span></button></div>
+  </aside>
+  <div class="app-shell">
+    <header class="topbar"><div class="breadcrumb"><span id="organization-label">Personal workspace</span> <span>/</span> <strong id="current-page">Workspace</strong></div><div class="topbar-right"><span id="wallet-chip-mount"></span><a href="#team" id="account-label">Sign in</a></div></header>
+    <main id="main" tabindex="-1">
+      <section id="view-workspace" class="view">
+        <div class="page-heading"><div><h1>A little less shared.<br>A lot more control.</h1><p>Review what leaves your workspace, before you use AI.</p></div><button class="button secondary" id="load-example">Try a synthetic example <span aria-hidden="true">↗</span></button></div>
+        <div class="privacy-notice"><span class="notice-symbol" aria-hidden="true">◇</span><p><strong>This workspace runs locally.</strong> Scanning and the response exercise stay in your browser. AI delivery is not connected.</p><a href="#integrations">View connections <span aria-hidden="true">↗</span></a></div>
+        <p id="gateway-boundary" class="fine-print">Sign in to enable organization policy and the controlled model gateway.</p>
+        <div class="workbench">
+          <div class="editor-column">
+            <div class="pane-heading"><h2>Your input</h2><span class="quiet-label">Only on this device</span></div>
+            <label class="sr-only" for="composer">Original text</label>
+            <textarea id="composer" placeholder="Write or paste the text you want to work with…" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" aria-describedby="input-help message"></textarea>
+            <div class="editor-meta"><span id="input-help">Text only · up to 25,000 characters</span><span id="character-count">0 / 25,000</span></div>
+            <div class="editor-actions"><button class="button primary" id="scan">Scan text <span aria-hidden="true">→</span></button><span class="quiet-label" id="scanner-readiness">Pattern scanner <span class="dot"></span> Ready</span></div>
+          </div>
+          <div class="preview-column">
+            <div class="pane-heading"><h2>Outgoing preview</h2><span class="badge" id="preview-state">Awaiting scan</span></div>
+            <div id="preview-empty" class="empty-preview"><div class="redaction-illustration" aria-hidden="true"><span></span><span></span><span></span><span></span></div><h3>See exactly what you’ll share.</h3><p>Scan your input to replace supported sensitive details with placeholders.</p></div>
+            <pre id="outgoing" hidden tabindex="0" aria-label="Exact outgoing text"></pre>
+            <div class="preview-footer"><span id="preview-caption">Original values stay in a temporary local map.</span><button class="text-button" id="copy-preview" disabled>Copy preview</button></div>
+          </div>
+        </div>
+        <p id="message" class="status-message" role="status" aria-live="polite">Start with the synthetic example to explore the workflow.</p>
+        <div class="lower-grid">
+          <section class="findings-section" aria-labelledby="findings-title"><div class="section-heading"><h2 id="findings-title">Scan findings <span id="findings-count" class="count">—</span></h2><a href="#policies">View rules <span aria-hidden="true">↗</span></a></div><div id="findings"><p class="muted empty-line">Your supported findings will appear here after a scan.</p></div><p class="fine-print">Detects supported email, phone, payment-card, credential, and custom-term patterns. Names and confidential meaning can be missed.</p></section>
+          <section class="review-section" aria-labelledby="review-title"><div class="section-heading"><h2 id="review-title">Review &amp; continue</h2></div><p>Check the preview before copying it, trying a local sample, or sending it through your organization’s gateway.</p><label class="check-row"><input type="checkbox" id="reviewed" disabled><span>I’ve reviewed the exact outgoing text.</span></label><div class="action-row"><button class="button secondary" id="try-response" disabled>Try sample response <span aria-hidden="true">→</span></button><button class="button primary" id="send-live" disabled>Send to AI <span aria-hidden="true">→</span></button></div><p id="send-help" class="fine-print">Live delivery requires sign-in and a configured provider. The sample response stays local.</p><button id="check-job" class="text-button" hidden>Check delivery status</button></section>
+        </div>
+        <section id="response-section" class="response-section" hidden><div class="section-heading"><h2 id="response-title">Sample response</h2><span class="badge" id="response-badge">Generated locally · not AI</span></div><p class="muted" id="response-description">This exercise echoes the approved preview. It is not a model-generated answer.</p><pre id="response-output" tabindex="0"></pre><div class="response-controls"><label class="check-row"><input type="checkbox" id="restore"><span>Restore permitted values in this display</span></label><button class="text-button" id="copy-response">Copy masked response</button></div><p class="fine-print">Only email, phone, and custom-term values from this job can restore. Model-generated placeholders are untrusted; inspect the result.</p></section>
+        <div class="evidence-strip"><span class="evidence-glyph" aria-hidden="true">◈</span><div><strong>Evidence starts with an honest record.</strong><p id="evidence-description">A local scan is a client assertion. Midnight anchoring is not configured.</p></div><a href="#activity">View activity <span aria-hidden="true">↗</span></a></div>
+      </section>
+      <section id="view-policies" class="view" hidden>
+        <div class="page-heading"><div><h1>Your local rules.</h1><p>Choose how supported findings are handled before review.</p></div><span class="badge" id="policy-version">Local policy · v1</span></div>
+        <div class="privacy-notice"><p id="policy-scope">These settings apply to this browser session. Sign in to view or publish organization policies.</p></div>
+        <form id="policy-form" class="policy-form"><div class="section-heading"><h2>Category actions</h2><span class="quiet-label">Credentials cannot be allowed</span></div><div id="policy-rules"></div><label for="custom-terms">Custom terms</label><textarea id="custom-terms" rows="3" placeholder="One exact term per line" spellcheck="false" autocomplete="off" aria-describedby="custom-help"></textarea><p id="custom-help" class="fine-print">Case-sensitive literal matches. Up to 50 terms, 100 characters each. Terms stay in memory and clear with the session.</p><label class="check-row"><input type="checkbox" id="require-semantic"><span>Require semantic detection (unavailable; blocks scanning)</span></label><button class="button primary" type="submit">Apply local rules <span aria-hidden="true">→</span></button><p id="policy-message" role="status" class="status-message"></p></form>
+        <section class="plain-section"><h2>Detector availability</h2><dl class="details-list"><div><dt>Pattern scanner</dt><dd>Available · patterns-1.0.0</dd></div><div><dt>Semantic / name detection</dt><dd>Unavailable</dd></div><div><dt>Documents and attachments</dt><dd>Unsupported · text composer only</dd></div></dl></section>
+        <section id="organization-policy-options" class="plain-section" hidden><h2>Organization controls</h2><p class="fine-print">Applied with “Publish organization policy” above. Strict mode blocks delivery until evidence verification is configured.</p><div class="policy-rule"><label for="evidence-mode">Evidence mode</label><select id="evidence-mode"><option value="standard">Standard · unsigned metadata</option><option value="strict">Strict · block until verified</option></select></div><div class="policy-rule"><label for="retention-days">Audit retention (days)</label><input id="retention-days" type="number" min="1" max="365" value="30"></div><button id="policy-history-button" class="text-button">View published versions</button><div id="policy-history"></div></section>
+      </section>
+      <section id="view-activity" class="view" hidden>
+        <div class="page-heading"><div><h1>A record, without the text.</h1><p>Local metadata from this tab. Cleared when your session ends.</p></div><button class="button secondary" id="export-activity" disabled>Export metadata <span aria-hidden="true">↓</span></button></div>
+        <div class="section-heading"><h2>Session activity</h2><label class="filter-label">Show <select id="activity-filter"><option value="all">All outcomes</option><option value="review">Ready for review</option><option value="blocked">Blocked</option><option value="sample">Sample response</option></select></label></div>
+        <div id="activity-list" class="activity-list"><p class="empty-line muted">No local activity yet. Scan an example to create your first record.</p></div>
+        <p class="fine-print">Local records are unsigned client assertions. They are not durable audit receipts, proof of scanning, or confirmed ledger evidence.</p>
+        <section id="gateway-activity" class="plain-section" hidden><div class="section-heading"><h2>Gateway activity</h2><div class="action-row"><button id="refresh-gateway-activity" class="text-button">Refresh</button><button id="export-gateway-activity" class="text-button">Export gateway metadata</button></div></div><label class="filter-label">Outcome <select id="gateway-filter"><option value="all">All outcomes</option><option value="prepared">Prepared</option><option value="sending">Sending</option><option value="delivered">Delivered</option><option value="unknown">Delivery unknown</option><option value="rejected">Provider rejected</option></select></label><p id="gateway-activity-message" role="status" class="status-message"></p><div id="gateway-activity-list"></div></section>
+      </section>
+      <section id="view-integrations" class="view" hidden>
+        <div class="page-heading"><div><h1>Know what’s connected.</h1><p>Every connection has a clear boundary.</p></div></div>
+        <div class="integration-row"><div><h2>Local privacy engine</h2><p>Text scanning, preview, and permitted display restoration.</p></div><span class="badge success">Available</span></div>
+        <div class="integration-row"><div><h2>AI provider · Controlled gateway</h2><p id="provider-description">The operator configures GEMINI_API_KEY / GEMINI_MODEL (or OPENAI_API_KEY / OPENAI_MODEL) in the server environment. Your reviewed text is sent through the authenticated gateway. Provider credentials never enter the browser.</p><p class="fine-print">Response storage is disabled for API retrieval. This does not guarantee provider-side deletion or zero data retention.</p></div><span class="badge" id="provider-state">Not configured</span></div>
+        <div class="integration-row"><div><h2>Midnight wallets</h2><p id="wallet-description">Connect any standards-compatible Midnight wallet (such as Lace or 1AM) on the Preprod network. Wallets are discovered automatically; none are hardcoded. Only the selected wallet id is remembered — never keys or secrets.</p><div id="wallet-connect-mount"></div><div id="wallet-account"></div></div><span class="badge" id="wallet-state">Not connected</span></div>
+        <div class="integration-row"><div><h2>Midnight Preprod</h2><p>Check the public node’s network identity and finalized head. This check sends no composer content.</p><button class="button secondary" id="check-midnight">Check node connection <span aria-hidden="true">↗</span></button><p id="midnight-message" class="status-message" role="status">Not checked. Evidence anchoring is not configured.</p><code id="midnight-head" hidden></code></div><span id="midnight-state" class="badge">Not checked</span></div>
+        <div class="integration-row"><div><h2>Evidence anchoring</h2><p>Needs a tested Compact contract, signer, proving service, and verification of actual ledger confirmation.</p></div><span class="badge">Not configured</span></div>
+        <div class="integration-row"><div><h2>Browser &amp; agent coverage</h2><p>Planned after the controlled request path. This build covers the separate local text composer.</p></div><span class="badge">Not available</span></div>
+        <p><a href="https://docs.midnight.network/nodes" target="_blank" rel="noreferrer">Read Midnight node documentation ↗</a></p>
+      </section>
+      <section id="view-team" class="view" hidden>
+        <div class="page-heading"><div><h1>Your team workspace.</h1><p>Sign in to use organization rules and keep a durable activity record.</p></div><button id="logout" class="button secondary" hidden>Sign out</button></div>
+        <div id="account-forms" class="account-grid">
+          <form id="login-form" class="account-form"><h2>Sign in</h2><label for="login-email">Email address</label><input id="login-email" type="email" autocomplete="username" required><label for="login-password">Password</label><input id="login-password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required><button type="submit" class="button primary">Sign in</button></form>
+          <form id="register-form" class="account-form"><h2>Create an account</h2><label for="register-email">Email address</label><input id="register-email" type="email" autocomplete="username" required><label for="register-password">Password · at least 12 characters</label><input id="register-password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required><label for="register-organization">Organization name</label><input id="register-organization" maxlength="80" autocomplete="organization"><label for="register-invitation">Invitation token (if joining a team)</label><input id="register-invitation" maxlength="64" autocomplete="off"><p class="fine-print">Without an invitation, you become the owner of a new organization. Email addresses identify accounts but are not email-verified.</p><button type="submit" class="button primary">Create account</button></form>
+        </div>
+        <p id="account-message" class="status-message" role="status"></p>
+        <div id="team-details" hidden><div class="section-heading"><h2 id="team-title">Members</h2><label class="filter-label">Organization <select id="organization-switch"></select></label></div><div id="member-list"></div><form id="invite-form" class="account-form"><h2>Invite a member</h2><label for="invite-email">Their email address</label><input id="invite-email" type="email" required><button type="submit" class="button secondary">Create invitation token</button><p class="fine-print">Share the token yourself. No email is sent. Tokens expire after 24 hours and work once, for this email only.</p><output id="invitation-token"></output></form><form id="accept-invitation-form" class="account-form"><h2>Join another organization</h2><label for="accept-token">Invitation token</label><input id="accept-token" maxlength="64" autocomplete="off" required><button type="submit" class="button secondary">Accept invitation</button></form></div>
+      </section>
+      <noscript><p>This local workspace needs JavaScript to scan text. Nothing has been sent.</p></noscript>
+      <div id="wallet-modal-root"></div>
+    </main>
+    <footer><span>Private AI <span class="footer-separator">/</span> Local workspace</span><span>Text stays here. You choose the next step.</span></footer>
+  </div>
+</body>
+</html>
