@@ -45,7 +45,7 @@ export default function MidnightPage() {
               <div className="border border-ink bg-ink p-6 text-paper md:p-8">
                 <p className="meta-label text-paper/60">Midnight does</p>
                 <ul className="mt-4 space-y-3 text-[15px]">
-                  {["Verify policy commitments", "Record protection receipts", "Provide tamper-resistant audit history", "Enable selective disclosure"].map((i) => (
+                  {["Verify operator authority", "Record opaque request commitments", "Provide tamper-resistant audit history", "Reject duplicate/replayed commitments"].map((i) => (
                     <li key={i} className="flex items-center gap-3 border-b border-paper/15 pb-3 last:border-0 last:pb-0">
                       <span aria-hidden className="font-mono text-accent">✓</span> {i}
                     </li>
@@ -76,10 +76,10 @@ export default function MidnightPage() {
             <div className="bg-coal p-6 md:p-10">
               <p className="meta-label text-bone/50">Verifiable — on Midnight</p>
               <ul className="mt-5 space-y-3 font-mono text-sm text-bone/85">
-                <li>Policy hash</li>
+                <li>Operator authority</li>
                 <li>Request commitment</li>
-                <li>Receipt</li>
-                <li>Version</li>
+                <li>Receipt status</li>
+                <li>Schema version</li>
               </ul>
               <p className="mt-6 font-mono text-sm text-accent">↓ Midnight</p>
             </div>
@@ -116,8 +116,9 @@ export default function MidnightPage() {
                 <p className="meta-label text-muted">Midnight</p>
                 <p className="mt-4 font-display text-2xl font-medium tracking-tight">Independent verification without publishing confidential content.</p>
                 <p className="mt-4 leading-relaxed text-muted">
-                  Commitments are tamper-resistant and checkable by third parties, while selective disclosure reveals
-                  only what a specific review requires.
+                  Commitments are tamper-resistant and checkable by third parties, while the fields behind each one —
+                  policy version, model, payload — stay off-chain until you choose to disclose the envelope for a
+                  specific review.
                 </p>
               </div>
             </Reveal>
@@ -127,10 +128,10 @@ export default function MidnightPage() {
             <div className="mt-6 max-w-3xl">
               <ArchitectureFlow
                 steps={[
-                  { label: "Enforcement", detail: "Policy version + scanner version bound to the request." },
-                  { label: "Commitment", detail: "Hash of the approved envelope with fresh randomness." },
-                  { label: "Midnight record", detail: "Receipt anchored; status trackable to confirmation." },
-                  { label: "Selective disclosure", detail: "Reveal policy or timing to a reviewer — never content.", accent: true },
+                  { label: "Enforcement", detail: "Policy version bound into the request commitment." },
+                  { label: "Commitment", detail: "SHA-256 hash of the approved envelope with fresh randomness." },
+                  { label: "Midnight record", detail: "Commitment anchored; status trackable to finalized confirmation." },
+                  { label: "Recomputed disclosure", detail: "A reviewer with the envelope recomputes the same commitment — content stays off-chain.", accent: true },
                 ]}
               />
             </div>

@@ -220,7 +220,7 @@ function renderPolicy() {
     const row = node('div', undefined, 'policy-rule');
     const name = node('label', label); name.htmlFor = `rule-${category}`;
     const select = node('select'); select.id = `rule-${category}`;
-    for (const value of (category === 'credential' ? ['redact', 'block'] : ['redact', 'block', 'allow'])) {
+    for (const value of (['credential', 'ssn'].includes(category) ? ['redact', 'block'] : ['redact', 'block', 'allow'])) {
       const option = node('option', { redact: 'Redact', block: 'Block', allow: 'Allow' }[value]); option.value = value; select.append(option);
     }
     select.value = policy.actions[category]; row.append(name, select); $('policy-rules').append(row);

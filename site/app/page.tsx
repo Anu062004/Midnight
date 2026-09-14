@@ -294,7 +294,7 @@ AWS key: [REMOVED]`}
               <Reveal delay={0.05}>
                 <p className="meta-label text-muted">Verifiable — on Midnight</p>
                 <ul className="mt-4 space-y-2.5 border-t border-line pt-4 text-[15px]">
-                  {["Policy commitment", "Request commitment", "Scanner version", "Receipt status", "Timestamp"].map((i) => (
+                  {["Operator authority", "Request commitment", "Contract schema version", "Receipt status", "Finalized block"].map((i) => (
                     <li key={i} className="flex items-center gap-2">
                       <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ink" /> {i}
                     </li>

@@ -52,7 +52,7 @@ export const posts: Post[] = [
     readMinutes: 5,
     body: [
       "Saying 'the policy ran' is easy. Proving it — to an auditor, a customer, a regulator — requires evidence that can't be edited after the fact and doesn't leak the content it describes. That combination rules out conventional logs, which are either mutable or stuffed with the very secrets they record.",
-      "Our receipts carry five fields: policy version, request commitment, scanner version, status, timestamp. Each is checkable: the commitment against the disclosed envelope, the version against the policy registry, the status against the ledger. Nothing else is stored, so there is nothing else to leak.",
+      "On-chain, a receipt is one opaque commitment plus the operator's authority — nothing else. Off it, the gateway holds the envelope that hashes to that commitment: organization, actor, job, policy version, model, nonce. Each is checkable: recompute the commitment from the disclosed envelope, then check that exact commitment's membership in the finalized ledger. Nothing else is stored, so there is nothing else to leak.",
       "Verification composes. A customer can confirm their document was processed under the approved policy without seeing your other traffic; an auditor can sample receipts without reading prompts. That is what 'verifiable' has to mean to be worth the word.",
     ],
   },

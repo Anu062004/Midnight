@@ -96,9 +96,9 @@ export function PolicyTable({
 /* Small verification receipt card. Commitments only — never raw content. */
 export function ReceiptCard({ dark = false, className }: { dark?: boolean; className?: string }) {
   const rows: Array<[string, ReactNode]> = [
-    ["Policy", "Enterprise AI Policy v4"],
+    ["Policy", "local-starter v4"],
     ["Request", "0x82A9…91F2"],
-    ["Scanner", "patterns-2.3.0"],
+    ["Scanner", "patterns-1.0.0"],
     ["Raw content stored", "NO"],
     ["Timestamp", "2026-09-12T09:41Z"],
   ];

@@ -19,12 +19,26 @@ const corpus = [
   { category: 'credential', input: 'AKIAIOSFODNN7EXAMPLE', positive: true },
   { category: 'credential', input: '-----BEGIN PRIVATE KEY-----\nsynthetic\n-----END PRIVATE KEY-----', positive: true },
   { category: 'credential', input: '-----BEGIN PRIVATE KEY-----\ntruncated', positive: true },
+  { category: 'credential', input: 'sk-ant-api03-synthetic1234567890abcdefghij', positive: true },
+  { category: 'credential', input: 'AIzaSyD-synthetic_google_key_1234567890123', positive: true },
+  { category: 'credential', input: 'xoxb-synthetic-slack-token-1234567890', positive: true },
+  { category: 'credential', input: 'rk_' + 'live_synthetic1234567890abcdef', positive: true },
+  { category: 'credential', input: 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.4pcPyMD09olPSyXnrXCjTwXyr4BsezdI1AVTmud2fU4', positive: true },
+  { category: 'credential', input: 'postgres://admin:hunter2@db.internal.example.com:5432/prod', positive: true },
   { category: 'credential', input: 'The secret to good design is restraint.', positive: false },
+  { category: 'ssn', input: '523-45-6789', positive: true },
+  { category: 'ssn', input: '000-45-6789', positive: false },
+  { category: 'ssn', input: '666-45-6789', positive: false },
+  { category: 'ssn', input: '523-00-6789', positive: false },
+  { category: 'ssn', input: '523-45-0000', positive: false },
+  { category: 'iban', input: 'DE89370400440532013000', positive: true },
+  { category: 'iban', input: 'GB29 NWBK 6016 1331 9268 19', positive: true },
+  { category: 'iban', input: 'DE89370400440532013001', positive: false },
   { category: 'custom', input: '北極 project', positive: true, terms: ['北極'] },
   { category: 'custom', input: 'northstar project', positive: false, terms: ['Northstar'] },
 ];
 test('published synthetic detector corpus: precision and recall per category', t => {
-  for (const category of ['email', 'phone', 'card', 'credential', 'custom']) {
+  for (const category of ['email', 'phone', 'card', 'ssn', 'iban', 'credential', 'custom']) {
     let tp = 0, fp = 0, fn = 0;
     for (const fixture of corpus.filter(f => f.category === category)) {
       const hit = scan(fixture.input, policyWith({ customTerms: fixture.terms ?? [] })).findings.some(f => f.category === category);

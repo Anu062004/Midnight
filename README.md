@@ -17,7 +17,7 @@ Open **http://127.0.0.1:3000**. For automatic server restarts, use `npm run dev`
 1. Load the synthetic example and select **Scan text**.
 2. Inspect findings and the exact outgoing preview.
 3. Check the review box, then select **Try sample response**.
-4. Toggle local restoration. Credentials and payment cards stay masked; the copy button always copies the masked response.
+4. Toggle local restoration. Credentials, payment cards, SSNs, and IBANs stay masked; the copy button always copies the masked response.
 5. Try category rules, custom terms, activity filters, and metadata export. **Clear session** removes text, mappings, rules, and activity. Sessions also expire after 15 minutes or on page exit.
 
 **Connections → Check node connection** performs a real read-only check against Midnight Preprod. Scanning itself makes no API requests. The response exercise echoes the approved text locally; it does not call an AI model.

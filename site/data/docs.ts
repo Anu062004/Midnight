@@ -10,7 +10,7 @@ export const docGroups: DocGroup[] = [
         slug: "workspace-overview",
         title: "Overview",
         body: [
-          "The workspace app in this repository is the working product behind the site: a local text-privacy workflow, a read-only Midnight Preprod check, an authenticated team gateway with live model delivery, and a multi-wallet adapter. Run it with Node 22+ via `npm start` in the repo root, then open http://127.0.0.1:3000. The workspace itself has no runtime package dependencies.",
+          "The workspace app in this repository is the working product behind the site: a local text-privacy workflow, a read-only Midnight Preprod check, an authenticated team gateway with live model delivery, and a multi-wallet adapter. Run it with Node 24+ via `npm start` in the repo root, then open http://127.0.0.1:3000. The workspace itself has no runtime package dependencies.",
           "Start with the synthetic example before entering confidential information. The response exercise echoes approved text locally — it is not a model call unless you explicitly send through the organization gateway.",
         ],
       },
@@ -18,7 +18,7 @@ export const docGroups: DocGroup[] = [
         slug: "workspace-workflow",
         title: "Local Workflow",
         body: [
-          "Write or paste text (25,000 character cap) and select Scan. A dedicated Web Worker finds supported email, phone, payment-card, credential, and custom-term patterns within a two-second deadline, then shows the exact outgoing preview with findings.",
+          "Write or paste text (25,000 character cap) and select Scan. A dedicated Web Worker finds supported email, phone, payment-card, Social Security number, IBAN, credential, and custom-term patterns within a two-second deadline, then shows the exact outgoing preview with findings.",
           "Checking the review box gates copying and the sample response. Restoration happens in the human display only — credentials and cards stay masked, and copy/export always use the sanitized text. Sessions expire after 15 minutes and keep everything in memory: no localStorage, no telemetry, no prompt-body logs.",
         ],
       },
@@ -58,7 +58,7 @@ export const docGroups: DocGroup[] = [
         slug: "workspace-verification",
         title: "Verification",
         body: [
-          "Root `npm test` runs 40 Node checks: detector corpus with per-category precision/recall, Unicode and overlap handling, job isolation, binding, expiry, server boundary, RPC validation, and 28 wallet-adapter checks with mocked connectors. No real wallet or provider key is needed.",
+          "Root `npm test` runs 47 Node checks: detector corpus with per-category precision/recall, Unicode and overlap handling, job isolation, binding, expiry, server boundary, RPC validation, Midnight contract/proving logic, and 28 wallet-adapter checks with mocked connectors. No real wallet or provider key is needed.",
           "The Playwright suite (Chrome) covers the full local workflow, clipboard masking, policy failures, expiry, and responsive layouts — all with synthetic content only.",
         ],
       },
@@ -72,7 +72,7 @@ export const docGroups: DocGroup[] = [
         title: "Overview",
         body: [
           "Bulkhead is a privacy layer between your people or agents and external AI models. Prompts are scanned locally, organization policy decides what may leave, sensitive values are tokenized or blocked, and only the safe version is sent.",
-          "Every protected request emits a privacy-preserving receipt via Midnight: policy version, request commitment, scanner version, timestamp. Receipts contain metadata, never content.",
+          "Every protected request's envelope — organization, actor, job, policy version, model, and a fresh nonce — hashes into one opaque request commitment recorded via Midnight. Receipts contain metadata bound inside that hash, never content.",
         ],
       },
       {
@@ -196,23 +196,23 @@ export const docGroups: DocGroup[] = [
       },
       {
         slug: "policy-registry",
-        title: "Policy Registry",
+        title: "Policy Versions",
         body: [
-          "Policy versions and their commitments form the registry that receipts point to. A receipt is meaningless without the version it binds.",
+          "Policy versions are immutable once published and live in the gateway's own storage, not on-chain. The policy version a request used is one of the fields hashed into that request's on-chain commitment, so it's cryptographically bound — but it isn't a separately disclosed on-chain field, and there's no on-chain policy registry today.",
         ],
       },
       {
         slug: "receipts",
         title: "Receipts",
         body: [
-          "A receipt carries policy version, request commitment, scanner version, status, and timestamp. Raw prompts, mappings, and responses are never included.",
+          "On-chain, the contract records only an opaque 32-byte request commitment per job, plus the operator's authority and a contract schema version — never a prompt, policy body, or scanner version. The gateway separately holds a signed, off-chain attestation over that commitment for its own audit trail.",
         ],
       },
       {
         slug: "verification",
         title: "Verification",
         body: [
-          "Verify a receipt by checking its commitment against the disclosed envelope and its policy version against the registry. Confirmation state is explicit: pending is shown as pending.",
+          "Verify a receipt by recomputing its commitment from the disclosed envelope (organization, actor, job, policy version, model, nonce, payload) and checking that exact commitment's membership in the finalized contract state at a specific block. Confirmation state is explicit: pending is shown as pending, never as confirmed.",
         ],
       },
     ],

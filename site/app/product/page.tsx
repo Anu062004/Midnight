@@ -17,7 +17,7 @@ const sections = [
   { id: "vault", n: "04", title: "Token vault", body: "Sensitive values map to placeholders scoped to a single request. The vault lives locally, expires fast, and never syncs." },
   { id: "gateway", n: "05", title: "AI gateway", body: "One controlled egress to any model. Payloads are revalidated against the frozen approval before dispatch; retries can't double-send." },
   { id: "output", n: "06", title: "Output protection", body: "Model responses are rescanned before display. Permitted placeholders restore for the human reader only — history keeps the sanitized form." },
-  { id: "receipts", n: "07", title: "Audit receipts", body: "Each protected request emits a commitment-based receipt to Midnight: policy version, request binding, scanner version, timestamp. Metadata only." },
+  { id: "receipts", n: "07", title: "Audit receipts", body: "Each protected request's exact envelope — including its policy version — is hashed into one opaque commitment recorded to Midnight, alongside the operator's authority. Metadata only; the fields behind the hash stay off-chain." },
 ];
 
 export default function ProductPage() {

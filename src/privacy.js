@@ -1,13 +1,14 @@
 export const SCANNER_VERSION = 'patterns-1.0.0';
 export const LIMIT = 25_000;
 export const TTL = 15 * 60 * 1000;
-export const CATEGORIES = Object.freeze({ email: 'Email address', phone: 'Phone number', card: 'Payment card', credential: 'Credential', custom: 'Custom term' });
+export const CATEGORIES = Object.freeze({ email: 'Email address', phone: 'Phone number', card: 'Payment card', ssn: 'Social Security number', iban: 'Bank account (IBAN)', credential: 'Credential', custom: 'Custom term' });
 export const DEFAULT_POLICY = Object.freeze({
   id: 'local-starter', version: 1, maxLength: LIMIT,
   requiredDetectors: Object.freeze(['patterns']),
-  actions: Object.freeze({ email: 'redact', phone: 'redact', card: 'redact', credential: 'redact', custom: 'redact' }),
+  actions: Object.freeze({ email: 'redact', phone: 'redact', card: 'redact', ssn: 'redact', iban: 'redact', credential: 'redact', custom: 'redact' }),
   customTerms: Object.freeze([]),
 });
+const RESERVED_TOKEN_SOURCE = '\\[(?:EMAIL|PHONE|CARD|SSN|IBAN|CREDENTIAL|CUSTOM)_\\d+\\]';
 export class PrivacyError extends Error {
   constructor(code, message) { super(message); this.code = code; }
 }
@@ -18,8 +19,8 @@ export function validatePolicy(policy) {
       !Array.isArray(policy.customTerms) || policy.customTerms.length > 50 ||
       policy.customTerms.some(t => typeof t !== 'string' || !t.trim() || t.length > 100) ||
       Object.keys(CATEGORIES).some(c => !['allow', 'redact', 'block'].includes(policy.actions?.[c])) ||
-      policy.actions.credential === 'allow') {
-    throw new PrivacyError('INVALID_POLICY', 'Use supported rules and up to 50 custom terms of 100 characters each. Credentials cannot be allowed.');
+      policy.actions.credential === 'allow' || policy.actions.ssn === 'allow') {
+    throw new PrivacyError('INVALID_POLICY', 'Use supported rules and up to 50 custom terms of 100 characters each. Credentials and Social Security numbers cannot be allowed.');
   }
 }
 function luhn(value) {
@@ -33,12 +34,31 @@ function luhn(value) {
   }
   return sum % 10 === 0;
 }
+function validSsn(value) {
+  const [area, group, serial] = value.replace(/[^0-9]/g, '').match(/^(\d{3})(\d{2})(\d{4})$/).slice(1);
+  return area !== '000' && area !== '666' && Number(area) < 900 && group !== '00' && serial !== '0000';
+}
+function validIban(value) {
+  const compact = value.replace(/\s/g, '').toUpperCase();
+  if (compact.length < 15 || compact.length > 34 || !/^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(compact)) return false;
+  const rearranged = compact.slice(4) + compact.slice(0, 4);
+  let remainder = 0;
+  for (const char of rearranged) {
+    const value = char >= '0' && char <= '9' ? char : String(char.charCodeAt(0) - 55);
+    for (const digit of value) remainder = (remainder * 10 + Number(digit)) % 97;
+  }
+  return remainder === 1;
+}
 const detectors = [
   ['credential', 'private-key', /-----BEGIN (?:RSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----[\s\S]*?(?:-----END (?:RSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----|$)/g],
-  ['credential', 'key-prefix', /\b(?:sk-(?:proj-)?[A-Za-z0-9_-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[A-Z0-9]{16})\b/g],
+  ['credential', 'key-prefix', /\b(?:sk-(?:proj-|ant-)?[A-Za-z0-9_-]{16,}|rk_live_[A-Za-z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[A-Z0-9]{16}|AIza[A-Za-z0-9_-]{35,}|xox[baprs]-[A-Za-z0-9-]{10,})\b/g],
+  ['credential', 'jwt', /\bey[A-Za-z0-9_-]{10,}\.ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g],
+  ['credential', 'connection-string', /\b[a-z][a-z0-9+.-]*:\/\/[^\s'"\/@]+:[^\s'"\/@]+@[^\s'"\/]+/gi],
   ['credential', 'assigned-secret', /\b(?:api[_-]?key|access[_-]?token|password|secret)\s*[:=]\s*(?:"[^"\r\n]+"|'[^'\r\n]+'|[^\s,;]{4,})/gi],
   ['email', 'email-ascii', /(?<![A-Za-z0-9.!#$%&'*+/=?^_`{|}~-])[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+\b/g],
   ['card', 'card-luhn', /(?<!\d)(?:\d[ -]?){12,18}\d(?!\d)/g, luhn],
+  ['ssn', 'ssn-dashed', /(?<!\d)\d{3}-\d{2}-\d{4}(?!\d)/g, validSsn],
+  ['iban', 'iban', /(?<![A-Za-z0-9])[A-Za-z]{2}\d{2}(?:[ ]?[A-Za-z0-9]{1,4}){3,8}(?!\w)/g, validIban],
   ['phone', 'phone-international', /(?<![\w+])\+[1-9]\d{0,2}[ .-]?(?:\(\d{1,4}\)[ .-]?)?\d(?:[ .-]?\d){6,13}(?!\d)/g, v => { const n = v.replace(/\D/g, '').length; return n >= 8 && n <= 15; }],
   ['phone', 'phone-nanp', /(?<!\d)(?:\+?1[ .-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[ .-][2-9]\d{2}[ .-]\d{4}(?!\d)/g],
 ];
@@ -47,9 +67,9 @@ export function scan(text, policy = DEFAULT_POLICY, { allowPlaceholders = false 
   if (typeof text !== 'string' || !text.trim()) throw new PrivacyError('EMPTY_INPUT', 'Add some text before scanning.');
   if (text.length > policy.maxLength) throw new PrivacyError('INPUT_TOO_LARGE', `Keep your text within ${policy.maxLength.toLocaleString()} characters. No partial scan was approved.`);
   if (policy.requiredDetectors.some(d => d !== 'patterns')) throw new PrivacyError('DETECTOR_UNAVAILABLE', 'A required detector is unavailable. Review the local policy before continuing.');
-  if (!allowPlaceholders && /\[(?:EMAIL|PHONE|CARD|CREDENTIAL|CUSTOM)_\d+\]/.test(text)) throw new PrivacyError('TOKEN_COLLISION', 'Remove reserved placeholders such as [EMAIL_1] from the original text, then scan again.');
+  if (!allowPlaceholders && new RegExp(RESERVED_TOKEN_SOURCE).test(text)) throw new PrivacyError('TOKEN_COLLISION', 'Remove reserved placeholders such as [EMAIL_1] from the original text, then scan again.');
   const findings = [];
-  const add = (category, detector, start, end) => findings.push({ category, detector, start, end, severity: category === 'credential' ? 'critical' : 'sensitive', action: policy.actions[category] });
+  const add = (category, detector, start, end) => findings.push({ category, detector, start, end, severity: category === 'credential' || category === 'ssn' ? 'critical' : 'sensitive', action: policy.actions[category] });
   for (const [category, detector, pattern, valid] of detectors) {
     for (const match of text.matchAll(new RegExp(pattern))) {
       if (!valid || valid(match[0])) add(category, detector, match.index, match.index + match[0].length);
@@ -63,7 +83,7 @@ export function scan(text, policy = DEFAULT_POLICY, { allowPlaceholders = false 
   // Union overlapping spans. The strongest action/category wins; no uncovered
   // tail of an overlapping secret is allowed to escape redaction.
   const weight = { allow: 0, redact: 1, block: 2 };
-  const priority = { phone: 1, email: 2, custom: 3, card: 4, credential: 5 };
+  const priority = { phone: 1, email: 2, custom: 3, card: 4, iban: 5, ssn: 6, credential: 7 };
   findings.sort((a, b) => a.start - b.start || b.end - a.end || priority[b.category] - priority[a.category]);
   const selected = [];
   for (const finding of findings) {
@@ -136,7 +156,7 @@ export function createLocalSession({ now = Date.now } = {}) {
         cursor = f.end;
       }
       safe += text.slice(cursor);
-      return { sanitized: safe, display: restore ? safe.replace(/\[(?:EMAIL|PHONE|CARD|CREDENTIAL|CUSTOM)_\d+\]/g, token => {
+      return { sanitized: safe, display: restore ? safe.replace(new RegExp(RESERVED_TOKEN_SOURCE, 'g'), token => {
         const entry = job.mapping.get(token);
         return entry && ['email', 'phone', 'custom'].includes(entry.category) ? entry.value : token;
       }) : safe, findings: result.findings.length };
