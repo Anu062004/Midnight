@@ -1,0 +1,27 @@
+pragma language_version >= 0.23;
+
+import CompactStandardLibrary;
+
+// Only randomized request commitments are public. No prompts or identities.
+export ledger authority: Bytes<32>;
+export ledger schemaVersion: Uint<8>;
+export ledger receipts: Set<Bytes<32>>;
+
+witness operatorSecret(): Bytes<32>;
+
+constructor(operator: Bytes<32>) {
+  authority = disclose(operator);
+  schemaVersion = 1;
+}
+
+export circuit publicKey(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>(
+    [pad(32, "private-ai:operator:v1"), secret]);
+}
+
+export circuit record(commitment: Bytes<32>): [] {
+  assert(publicKey(operatorSecret()) == authority, "Unauthorized submitter");
+  const receipt = disclose(commitment);
+  assert(!receipts.member(receipt), "Receipt already recorded");
+  receipts.insert(receipt);
+}

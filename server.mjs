@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { createGateway, ApiError } from './gateway.mjs';
+import { createMidnight } from './midnight.mjs';
 
 export const PREPROD_RPC = 'https://rpc.preprod.midnight.network/';
 export async function checkMidnight(fetcher = fetch) {
@@ -88,7 +89,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const openaiKey = (process.env.OPENAI_API_KEY ?? '').trim();
   const openaiModel = (process.env.OPENAI_MODEL ?? '').trim();
   const useGemini = Boolean(geminiKey);
-  const server = makeServer({ gateway: createGateway({ filename: process.env.DATABASE_PATH ?? './data/workspace.sqlite', providerId: useGemini ? 'gemini' : 'openai', apiKey: useGemini ? geminiKey : openaiKey, model: useGemini ? geminiModel : openaiModel }) });
+  const midnight = await createMidnight({ keyFile: process.env.MIDNIGHT_KEY_FILE ?? './data/midnight-operator.json' });
+  const server = makeServer({ gateway: createGateway({ filename: process.env.DATABASE_PATH ?? './data/workspace.sqlite', providerId: useGemini ? 'gemini' : 'openai', apiKey: useGemini ? geminiKey : openaiKey, model: useGemini ? geminiModel : openaiModel, midnight, operatorUserId: process.env.MIDNIGHT_OPERATOR_USER_ID ?? '' }) });
   server.on('error', error => {
     if (error.code === 'EADDRINUSE') console.error(`Port ${port} is already in use. Stop the other server (lsof -i :${port}) or use another port: PORT=${port === 3000 ? 3001 : port + 1} npm run dev`);
     else console.error(`Server failed: ${error.code}`);

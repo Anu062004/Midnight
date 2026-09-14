@@ -30,7 +30,7 @@ async function passwordHash(value, salt = token()) {
   const key = await derive(value, salt, 64, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
   return `${salt}:${key.toString('hex')}`;
 }
-export function createGateway({ filename = ':memory:', apiKey = '', model = '', providerId = 'openai', fetcher = fetch, now = Date.now, providerTimeout = 45000, dailyLimit = 100 } = {}) {
+export function createGateway({ filename = ':memory:', apiKey = '', model = '', providerId = 'openai', fetcher = fetch, now = Date.now, providerTimeout = 45000, dailyLimit = 100, midnight = null, operatorUserId = '' } = {}) {
   if (!['openai', 'gemini'].includes(providerId)) throw new Error('Unsupported providerId: use openai or gemini');
   if (filename !== ':memory:') {
     mkdirSync(dirname(filename), { recursive: true, mode: 0o700 });
@@ -50,6 +50,10 @@ export function createGateway({ filename = ':memory:', apiKey = '', model = '', 
     CREATE TABLE IF NOT EXISTS consumed_jobs(org TEXT NOT NULL,id TEXT NOT NULL,PRIMARY KEY(org,id));
     CREATE INDEX IF NOT EXISTS jobs_actor ON jobs(org,actor,created);
     CREATE INDEX IF NOT EXISTS audit_tenant ON audit(org,created);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS midnight_deployment(id INTEGER PRIMARY KEY CHECK(id=1), address TEXT NOT NULL, state TEXT NOT NULL, transaction_id TEXT, block TEXT, tx TEXT);
+    CREATE TABLE IF NOT EXISTS evidence(org TEXT NOT NULL, job TEXT NOT NULL, state TEXT NOT NULL, signature TEXT, transaction_id TEXT, block TEXT, tx TEXT, PRIMARY KEY(org,job), FOREIGN KEY(org,job) REFERENCES jobs(org,id) ON DELETE CASCADE);
+    UPDATE evidence SET state='unknown' WHERE state='queued' AND tx IS NULL;
+    DELETE FROM midnight_deployment WHERE address='';`);
   // ponytail: one server process owns this database. Multiple replicas need a lease
   // before startup recovery can distinguish an active sender from a crashed one.
   db.prepare("UPDATE jobs SET state='unknown', code='DELIVERY_UNKNOWN', updated=? WHERE state='sending'").run(now());
@@ -62,7 +66,8 @@ export function createGateway({ filename = ':memory:', apiKey = '', model = '', 
     catch (error) { db.exec('ROLLBACK'); throw error; }
   }
   function audit(ctx, event, reference = null) { run('INSERT INTO audit(org,actor,event,reference,created) VALUES(?,?,?,?,?)', ctx.org, ctx.user, event, reference, now()); }
-  const provider = () => ({ id: providerId, model, configured: Boolean(apiKey && /^[A-Za-z0-9._:-]{1,100}$/.test(model)), evidence: 'not_configured' });
+  const deployment = () => get('SELECT * FROM midnight_deployment WHERE id=1');
+  const provider = () => ({ id: providerId, model, configured: Boolean(apiKey && /^[A-Za-z0-9._:-]{1,100}$/.test(model)), evidence: midnight ? deployment()?.state ?? 'not_deployed' : 'not_configured' });
   const effective = org => JSON.parse(get('SELECT body FROM policies WHERE org=? ORDER BY version DESC LIMIT 1', org).body);
   function publish(org, value) {
     const body = JSON.stringify(value);
@@ -97,7 +102,8 @@ export function createGateway({ filename = ':memory:', apiKey = '', model = '', 
     run('UPDATE invitations SET used=1 WHERE token=?', invite.token);
   }
   function publicJob(row) {
-    return { id: row.id, actorId: row.actor, policyVersion: row.version, model: row.model, commitment: row.commitment, state: row.state, code: row.code, providerRequestId: row.provider_id, createdAt: new Date(row.created).toISOString(), updatedAt: new Date(row.updated).toISOString(), evidenceState: 'not_configured', verification: 'Unsigned gateway metadata; no blockchain confirmation.' };
+    const receipt = get('SELECT * FROM evidence WHERE org=? AND job=?', row.org, row.id);
+    return { id: row.id, actorId: row.actor, policyVersion: row.version, model: row.model, commitment: row.commitment, state: row.state, code: row.code, providerRequestId: row.provider_id, createdAt: new Date(row.created).toISOString(), updatedAt: new Date(row.updated).toISOString(), evidenceState: receipt?.state ?? 'not_configured', attestation: receipt?.signature ? JSON.parse(receipt.signature) : null, transactionId: receipt?.transaction_id, contractAddress: deployment()?.address, finalizedBlock: receipt?.block, verification: receipt?.state === 'confirmed' ? 'Commitment found in finalized Preprod contract state. This does not prove successful redaction or provider behavior.' : 'No confirmed blockchain receipt. A signature is the gateway’s assertion only.' };
   }
   function findJob(ctx, id) {
     const row = get('SELECT * FROM jobs WHERE org=? AND id=? AND actor=?', ctx.org, id, ctx.user);
@@ -115,10 +121,19 @@ export function createGateway({ filename = ':memory:', apiKey = '', model = '', 
     }
   }
   function ready(p) {
-    if (p.evidenceMode === 'strict') fail(409, 'EVIDENCE_PENDING', 'Strict mode requires verified evidence. Anchoring is not configured, so delivery is blocked.');
     if (!provider().configured) fail(503, 'PROVIDER_UNAVAILABLE', 'The operator must configure a provider key and model on the server.');
+    if (!midnight) fail(503, 'EVIDENCE_UNAVAILABLE', 'Compile the Midnight contract and restart the gateway to enable signed request evidence.');
   }
-  function bound(ctx, row, payload) { return hash(envelopeBytes({ organizationId: ctx.org, userId: ctx.user, jobId: row.id, policyVersion: row.version, model: row.model, nonce: row.nonce, payload })); }
+  function bound(ctx, row, payload) { return hash(envelopeBytes({ organizationId: ctx.org, userId: ctx.user, jobId: row.id, policyVersion: row.version, providerId, model: row.model, nonce: row.nonce, payload })); }
+  async function verifyEvidence(ctx, row) {
+    const contract = deployment();
+    if (!midnight || !contract) fail(409, 'EVIDENCE_PENDING', 'Deploy the evidence contract before anchoring this request.');
+    try {
+      const result = await midnight.verify(contract.address, row.commitment);
+      if (result.confirmed) run("UPDATE evidence SET state='confirmed',block=?,tx=NULL WHERE org=? AND job=?", result.finalizedBlock, ctx.org, row.id);
+      return result.confirmed;
+    } catch { fail(503, 'EVIDENCE_UNAVAILABLE', 'Finalized evidence could not be verified. Strict delivery remains blocked.'); }
+  }
   function checkJob(ctx, row, payload) {
     if (bound(ctx, row, payload) !== row.commitment) fail(409, 'PAYLOAD_CHANGED', 'The approved text changed. Create and review a new job.');
     const p = effective(ctx.org);
@@ -128,8 +143,10 @@ export function createGateway({ filename = ':memory:', apiKey = '', model = '', 
   }
   async function deliver(ctx, row, payload, secret) {
     if (row.state !== 'prepared') return { job: publicJob(row), replay: true };
+    if (effective(ctx.org).evidenceMode === 'strict' && !await verifyEvidence(ctx, row)) fail(409, 'EVIDENCE_PENDING', 'The commitment is not finalized yet. Confirm its receipt before sending.');
     auth(secret); // Membership/session and policy are rechecked immediately before dispatch.
-    checkJob(ctx, row, payload);
+    const policy = checkJob(ctx, row, payload);
+    if (policy.evidenceMode === 'strict' && get('SELECT state FROM evidence WHERE org=? AND job=?', ctx.org, row.id)?.state !== 'confirmed') fail(409, 'EVIDENCE_PENDING', 'Strict delivery requires a confirmed receipt.');
     if (now() - row.created > 15 * 60000) fail(409, 'JOB_EXPIRED', 'The approval expired. Scan and review again.');
     transaction(() => {
       const used = get("SELECT count(*) AS n FROM jobs WHERE org=? AND state<>'prepared' AND created>?", ctx.org, now() - 24 * hour).n;
@@ -264,6 +281,37 @@ export function createGateway({ filename = ':memory:', apiKey = '', model = '', 
         run('DELETE FROM invitations WHERE expires<?', now());
       });
       if (method === 'POST' && path === '/api/logout') { run('DELETE FROM sessions WHERE token=?', hash(secret)); return { logout: true }; }
+      if (method === 'GET' && path === '/api/midnight/contract') { const contract = deployment(); return { compiled: Boolean(midnight), network: 'preprod', authority: midnight?.authority, attestationKey: midnight?.attestationKey, deployment: contract ? { address: contract.address, state: contract.state, transactionId: contract.transaction_id, finalizedBlock: contract.block } : null, canDeploy: Boolean(midnight && operatorUserId && ctx.user === operatorUserId && ctx.role === 'owner') }; }
+      if (method === 'POST' && path === '/api/midnight/deploy') {
+        owner(ctx); shape(body, ['wallet']);
+        if (!midnight) fail(503, 'CONTRACT_UNAVAILABLE', 'Compile the contract first: npm run contract:build.');
+        if (!operatorUserId || ctx.user !== operatorUserId) fail(403, 'FORBIDDEN', 'The server-configured operator account must deploy this contract.');
+        if (deployment()?.tx && deployment().state !== 'confirmed') return { tx: deployment().tx, contractAddress: deployment().address, transactionId: deployment().transaction_id };
+        if (deployment()) fail(409, 'DEPLOYMENT_EXISTS', 'A deployment is already pending or confirmed. Check its status; do not deploy again.');
+        // Claim the deployment before awaiting the prover so concurrent requests cannot replace it.
+        run("INSERT INTO midnight_deployment VALUES(1,'','preparing',NULL,NULL,NULL)");
+        try {
+          const result = await midnight.prepareDeploy(body.wallet);
+          run("UPDATE midnight_deployment SET address=?,state='queued',transaction_id=?,tx=? WHERE id=1", result.contractAddress, result.transactionId, result.tx);
+          auth(secret);
+          return result;
+        } catch {
+          // Once an address exists, the wallet may have seen the transaction; preserve it.
+          run("DELETE FROM midnight_deployment WHERE address=''");
+          fail(503, 'PROVING_UNAVAILABLE', 'Deployment could not be prepared. Check the local proof server and wallet keys.');
+        }
+      }
+      if (method === 'POST' && path === '/api/midnight/confirm') {
+        shape(body, []);
+        const contract = deployment();
+        if (!midnight || !contract?.address) fail(409, 'EVIDENCE_PENDING', 'No deployment has been prepared.');
+        try {
+          const result = await midnight.verify(contract.address);
+          if (!result.confirmed) throw new Error('Not confirmed');
+          run("UPDATE midnight_deployment SET state='confirmed',block=?,tx=NULL WHERE id=1", result.finalizedBlock);
+          return result;
+        } catch { fail(503, 'EVIDENCE_UNAVAILABLE', 'The expected contract is not verified in finalized Preprod state yet.'); }
+      }
       if (method === 'GET' && path === '/api/policy/effective') return { policy: effective(ctx.org), provider: provider() };
       if (method === 'GET' && path === '/api/policies') return { policies: all('SELECT version,body,commitment,created FROM policies WHERE org=? ORDER BY version DESC', ctx.org).map(p => ({ ...JSON.parse(p.body), commitment: p.commitment, createdAt: new Date(p.created).toISOString() })) };
       if (method === 'POST' && path === '/api/policies') {
@@ -314,8 +362,46 @@ export function createGateway({ filename = ':memory:', apiKey = '', model = '', 
           return { job: publicJob(previous), replay: true };
         }
         if (get('SELECT count(*) AS n FROM jobs WHERE org=? AND created>?', ctx.org, now() - 24 * hour).n >= dailyLimit * 2) fail(429, 'QUOTA_EXCEEDED', 'Too many jobs were created today.');
-        run("INSERT INTO jobs(org,id,actor,version,model,nonce,commitment,state,created,updated) VALUES(?,?,?,?,?,?,?,'prepared',?,?)", ctx.org, row.id, ctx.user, row.version, row.model, row.nonce, row.commitment, now(), now());
+        transaction(() => {
+          run("INSERT INTO jobs(org,id,actor,version,model,nonce,commitment,state,created,updated) VALUES(?,?,?,?,?,?,?,'prepared',?,?)", ctx.org, row.id, ctx.user, row.version, row.model, row.nonce, row.commitment, now(), now());
+          if (midnight) run("INSERT INTO evidence(org,job,state,signature) VALUES(?,?,'signed',?)", ctx.org, row.id, JSON.stringify(midnight.sign(row.commitment)));
+        });
         audit(ctx, 'job_prepared', row.id);
+        return { job: publicJob(findJob(ctx, row.id)) };
+      }
+      const anchor = path.match(/^\/api\/jobs\/([^/]+)\/evidence$/);
+      if (method === 'POST' && anchor) {
+        shape(body, ['wallet']);
+        const row = findJob(ctx, anchor[1]), contract = deployment();
+        if (!midnight || contract?.state !== 'confirmed') fail(409, 'EVIDENCE_PENDING', 'Deploy and confirm the evidence contract first.');
+        if (await verifyEvidence(ctx, row)) return { job: publicJob(findJob(ctx, row.id)) };
+        auth(secret);
+        const saved = get('SELECT tx,transaction_id FROM evidence WHERE org=? AND job=?', ctx.org, row.id);
+        if (saved?.tx) return { tx: saved.tx, transactionId: saved.transaction_id, job: publicJob(findJob(ctx, row.id)) };
+        if (get('SELECT state FROM evidence WHERE org=? AND job=?', ctx.org, row.id)?.state === 'queued') fail(409, 'EVIDENCE_PENDING', 'A proof is already being prepared.');
+        run("UPDATE evidence SET state='queued' WHERE org=? AND job=?", ctx.org, row.id);
+        try {
+          const result = await midnight.prepareReceipt(contract.address, row.commitment, body.wallet);
+          run("UPDATE evidence SET state='queued',transaction_id=?,tx=? WHERE org=? AND job=?", result.transactionId, result.tx, ctx.org, row.id);
+          auth(secret);
+          return { ...result, job: publicJob(findJob(ctx, row.id)) };
+        } catch {
+          run("UPDATE evidence SET state='unknown' WHERE org=? AND job=?", ctx.org, row.id);
+          fail(503, 'PROVING_UNAVAILABLE', 'Receipt preparation failed. Check its status before trying again.');
+        }
+      }
+      const submitted = path.match(/^\/api\/jobs\/([^/]+)\/evidence\/submitted$/);
+      if (method === 'POST' && submitted) {
+        shape(body, []); const row = findJob(ctx, submitted[1]);
+        // Wallet submission is only a hint. Only verifyEvidence may set confirmed.
+        run("UPDATE evidence SET state='submitted' WHERE org=? AND job=? AND state='queued' AND tx IS NOT NULL", ctx.org, row.id);
+        return { job: publicJob(findJob(ctx, row.id)) };
+      }
+      const confirm = path.match(/^\/api\/jobs\/([^/]+)\/evidence\/confirm$/);
+      if (method === 'POST' && confirm) {
+        shape(body, []); const row = findJob(ctx, confirm[1]);
+        await verifyEvidence(ctx, row);
+        auth(secret);
         return { job: publicJob(findJob(ctx, row.id)) };
       }
       const send = path.match(/^\/api\/jobs\/([^/]+)\/send$/);

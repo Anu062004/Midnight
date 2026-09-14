@@ -2,20 +2,21 @@
 
 ## Current scope
 
-Milestone A is implemented as a separate browser composer. The starting folder contained only `PRIVATE_AI_PRODUCT_REFERENCE.md`; no framework, code, or deployment existed. Native JavaScript modules and a small Node HTTP server keep this first workflow runnable without runtime dependencies. UI logic is separate from the scanner so the latter can be reused when an authenticated gateway is added.
+The separate browser composer, authenticated organization gateway, and Midnight receipt implementation are now connected. Native JavaScript handles the browser; Node 24 supplies HTTP, cryptography and SQLite, with official Midnight packages for contract execution, proving and finalized-state queries. [MIDNIGHT.md](MIDNIGHT.md) is the current setup and evidence reference. The contract is compiled and locally proven; funded-wallet Preprod deployment remains pending.
 
 | Component | Implementation | Boundary |
 |---|---|---|
 | Composer and exact preview | `index.html`, `src/app.js` | Raw original never leaves the tab through app network requests |
 | Scanner | `src/privacy.js`, `src/scan-worker.js` | Dedicated local Worker; 25,000 UTF-16 code-unit input cap; two-second worker deadline |
-| Local policy | Versioned settings in browser memory | Local behavior only; no server authorization claims |
+| Policy | Local session rules or immutable organization versions in SQLite | Current organization rules rechecked at delivery |
 | Restoration map | One random UUID job per tab, in memory | Job-bound lookup; old maps invalidated on new scan, edit, policy application, clearing, expiry, or page exit |
-| Response exercise | Echo of approved outgoing text | Explicitly synthetic; rescanned before human display |
-| Activity | Latest 100 metadata events, in memory | Unsigned local assertions; not durable pilot audit storage |
-| Server | `server.mjs` | Loopback only, explicit asset allowlist, no write endpoints or payload logging |
+| Response | Local echo or configured Gemini/OpenAI gateway | Both rescanned before human display |
+| Activity | Local events plus tenant-scoped SQLite metadata | Signed receipts and independently checked ledger status remain distinct |
+| Server | `server.mjs`, `gateway.mjs` | Loopback, authenticated/CSRF-protected write endpoints; no prompt/response persistence |
 | Midnight probe | Fixed Preprod RPC destination | Reads chain identity and finalized head; does not submit transactions |
+| Midnight evidence | `contracts/receipts.compact`, `midnight.mjs` | Operator authorization, replay prevention, local proving, wallet submission, finalized-state verification |
 
-Browser assets and fonts are served locally. A restrictive Content Security Policy permits only same-origin assets, workers, and connections, prohibits form submission and framing, and avoids external scripts. Host and Origin checks reduce accidental cross-origin use and DNS rebinding against the local server. This server is for local development; it is not an authentication system.
+Browser assets and fonts are served locally. A restrictive Content Security Policy permits only same-origin assets, workers, and connections, prohibits native form submission and framing, and avoids external scripts. Forms use authenticated same-origin JSON APIs. Host/Origin, HttpOnly SameSite cookies, CSRF tokens, scrypt passwords, active membership checks, and owner permissions protect this local development gateway. This is not a production identity service; email verification and account recovery are not implemented.
 
 ## Scanner contract and limitations
 
@@ -30,15 +31,15 @@ Browser assets and fonts are served locally. A restrictive Content Security Poli
 - Names, confidential context, documents, semantic recognition, and language models are unavailable. Requiring an unavailable detector blocks the scan explicitly. Deterministic findings carry no fabricated confidence scores.
 - Placeholder expansion beyond the configured limit rejects the preview. Original edits during a scan terminate the worker and invalidate its generation, so stale results cannot enable review.
 
-The outgoing preview is read-only. Copy and the sample response require explicit review and exact equality with the stored payload and policy version. This local guard is not a security boundary against a user controlling their browser; server-side authentication, authorization, and independent validation belong in Milestone B.
+The outgoing preview is read-only. Copy, sample response and live delivery require explicit review and exact equality with the local job payload/policy version. The gateway independently authenticates the actor, recomputes the request digest, scans outgoing text, checks policy freshness and claims delivery once. Local review remains a client assertion, not proof that a malicious browser actually ran the scanner.
 
-Response findings are scanned with the active job policy. Newly detected response values become `[REDACTED]`, preventing collisions with existing job placeholders. Email, phone, and custom terms can restore in the human display only. Credentials and cards remain masked. Copying through the app uses the sanitized response regardless of the display toggle. There is no conversation-history or model delivery path yet.
+Response findings are scanned with the active job policy. Newly detected response values become `[REDACTED]`, preventing collisions with existing job placeholders. Email, phone, and custom terms can restore in the human display only. Credentials and cards remain masked. Copying uses the sanitized response regardless of the display toggle. The live gateway sends single reviewed requests; conversation history is not implemented.
 
 ## Local lifetime
 
 The browser session lasts 15 minutes from initialization or explicit clearing; it does not silently extend on activity. Every sensitive action checks wall-clock expiry, and visibility changes recheck it after suspension. Timers, page exit, and back/forward-cache restoration also clear local state. Browser strings cannot be cryptographically zeroized; clearing removes app references and visible DOM content. It does not erase user-controlled clipboard contents or exports.
 
-No user/organization IDs are fabricated. The current scope is a single unauthenticated local tab. Tenant/actor scoping is required before any team workflow is enabled.
+The gateway generates persistent account/organization IDs during registration and derives request identity from authenticated sessions. Local session clearing does not sign the account out or delete server audit records. Signed-in users reload their published organization policy, including custom terms, after a local reset; organization policy retention differs from temporary local rules.
 
 ## Midnight: verified references
 
@@ -47,7 +48,7 @@ Official documentation checked on 12 September 2026:
 - [Node overview](https://docs.midnight.network/nodes): the node handles protocol state, networking, and transaction validation. Operating a full node includes Cardano integration and is separate from implementing this DApp.
 - [Node endpoints](https://docs.midnight.network/nodes/node-endpoints): public RPC access is available; the app does not need to operate a full node to begin integration.
 - [Networks and environments](https://docs.midnight.network/guides/networks-and-environments): Preprod uses network ID `preprod`, RPC `https://rpc.preprod.midnight.network`, indexer `https://indexer.preprod.midnight.network/api/v4/graphql`, and a locally operated proof server at `http://localhost:6300`. The proof service handles private information and needs its own access boundary.
-- [Toolchain installation](https://docs.midnight.network/getting-started/installation) and [Compact](https://docs.midnight.network/compact): consult the current compatible toolchain before compiling contracts. This build deliberately contains no uncompiled contract or SDK compatibility claim.
+- [Toolchain installation](https://docs.midnight.network/getting-started/installation) and [Compact](https://docs.midnight.network/compact): implementation updated on 14 September using compiler 0.31.1, runtime 0.16.0, Midnight.js 4.1.1 and proof server 8.1.0. See the [compatibility matrix](https://docs.midnight.network/relnotes/support-matrix).
 
 The implemented probe calls only `system_chain` and `chain_getFinalizedHead`. It verifies the JSON-RPC response IDs, chain name `Midnight Preprod`, and block-hash shape. It uses an eight-second deadline, disallows redirects, and rate-limits checks to one every five seconds per server process. No user-configurable URL, keys, witnesses, prompts, or mappings enter the request. The browser only shows the status after an explicit check.
 
@@ -55,13 +56,15 @@ A live probe succeeded at `2026-09-12T18:04:37.478Z`, returning finalized head `
 
 ## Next implementation boundaries
 
-**Milestone B — controlled team pilot.** Select the identity provider and first model provider. Add authenticated organizations and owner/member roles, a durable database, immutable published policies, and one fixed provider adapter. Bind approval to a canonical outgoing envelope; revalidate current policy at delivery; persist the idempotency decision before dispatch; retain delivery uncertainty after timeouts. Tenant isolation and modified-payload tests must pass before enabling real confidential requests. Local demo activity must never authorize a live call.
+**Controlled team pilot.** Local account/organization roles, invitations, revocation, immutable policies, SQLite audit metadata, exact payload binding and single dispatch are implemented. Gemini is selected when its server key is configured; otherwise OpenAI is selected. A production identity provider, hosting/security review and representative scanner corpus remain release work.
 
-**Milestone C — Midnight evidence.** Define a reviewed randomized commitment schema, including encoding, domain separation, field order, and algorithm identifiers. Keep local SHA-family payload binding explicitly separate from any Compact commitment construction unless cross-runtime vectors establish equivalence. Implement and compile a minimal authorized-submitter contract, replay protection, signer/prover handling, durable recovery, and actual indexer/ledger confirmation against the configured network, contract, and commitment. Display `local_only`, `signed`, `queued`, `submitted`, `confirmed`, `failed`, and `unknown` according to verified state. Strict workflows must block during required-evidence outages. A hash or arbitrary transaction ID is insufficient.
+**Midnight evidence.** The versioned commitment schema, operator-authorized/replay-protected Compact contract, Ed25519 attestation, local proof generation, wallet transaction flow and finalized-state verifier are implemented and tested locally. Strict delivery fails closed during required-evidence outages. Funded-wallet Preprod deployment/settlement validation and an automatic operator relayer/batching remain outstanding. See [MIDNIGHT.md](MIDNIGHT.md) for exact states, keys and limitations.
 
 The P1 browser extension, agents, document permissions, and revocation remain later milestones, as ordered in the reference. Production hosting and production blockchain deployment are separate release decisions.
 
 ## Validation recorded
+
+14 September 2026: 47 Node tests and 15 Chrome tests passed. The actual proof-server test generated and cryptographically verified a receipt proof, applied deployment and receipt transactions to a synthetic ledger, and checked the resulting commitment membership. Only fee balancing was disabled for that synthetic ledger. Node/indexer finalized-block lookup was checked on Preprod; no funded-wallet deployment or network receipt is claimed. The earlier Milestone A results below are historical.
 
 Node 24.18.0 on macOS arm64: 12 Node tests passed; the 25,000-character synthetic scan benchmark reported p95 about 0.4 ms in Node on this machine. This does not establish browser p95 or cross-device performance. The small detector corpus reported precision/recall 1.0 for each declared category on its own fixtures only. Expand it with representative, approved synthetic cases before a pilot.
 
